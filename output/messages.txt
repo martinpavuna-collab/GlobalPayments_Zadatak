@@ -1,0 +1,3 @@
+UPLATA|ČĆŽŠĐ|100.50|HRK
+STORNO|žćčšđ|42.00|EUR
+KRAJ
