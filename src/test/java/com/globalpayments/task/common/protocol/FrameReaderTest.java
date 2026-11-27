@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -172,36 +173,65 @@ class FrameReaderTest {
         assertNull(third);
     }
 
+    // ==========================================
+    // additional protocol rules
+    // ==========================================
+
     @Test
-    void shouldThrowExceptionForIncompleteLengthHeader() {
-        // Arrange
-        byte[] data = {0x00};
+    void lengthIsBigEndianMsbFirst() throws IOException {
+        // 0x01 0x00 = 256 (a little-endian reader would see 1)
+        byte[] data = new byte[2 + 256];
+        data[0] = 0x01;
+        data[1] = 0x00;
 
-        ByteArrayInputStream input =
-                new ByteArrayInputStream(data);
-
-        // Act & Assert
-        assertThrows(
-                IOException.class,
-                () -> reader.readFrame(input)
-        );
+        assertEquals(256, reader.readFrame(new ByteArrayInputStream(data)).length);
     }
 
     @Test
-    void shouldThrowExceptionForIncompletePayload() {
-        // Arrange
-        byte[] data = {
-                0x00, 0x05,       // length = 5
-                0x41, 0x42, 0x43  // samo 3 payload bajta: ABC
+    void shouldAcceptMinimumAndMaximumPayloadSize() throws IOException {
+        assertEquals(1, reader.readFrame(
+                new ByteArrayInputStream(new byte[]{0x00, 0x01, 'X'})).length);
+
+        byte[] max = new byte[2 + 4096];
+        max[0] = 0x10;
+        max[1] = 0x00;
+        assertEquals(4096, reader.readFrame(new ByteArrayInputStream(max)).length);
+    }
+
+    @Test
+    void shouldNotTreatHighBytesAsNegativeLength() throws IOException {
+        // payload bytes >= 0x80 (ISO-8859-2 letters) must pass through unchanged
+        byte[] expected = {(byte) 0xC8, (byte) 0xC6, (byte) 0xAE};
+        ByteArrayInputStream input = new ByteArrayInputStream(
+                new byte[]{0x00, 0x03, (byte) 0xC8, (byte) 0xC6, (byte) 0xAE});
+
+        assertArrayEquals(expected, reader.readFrame(input));
+    }
+
+    @Test
+    void shouldReadPayloadDeliveredInTinyChunks() throws IOException {
+        // TCP may deliver a frame in arbitrary pieces; the reader has to keep reading.
+        byte[] data = {0x00, 0x05, 'H', 'E', 'L', 'L', 'O'};
+        InputStream oneByteAtATime = new InputStream() {
+            private int pos;
+
+            @Override
+            public int read() {
+                return pos < data.length ? data[pos++] & 0xFF : -1;
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) {
+                int c = read();
+                if (c == -1) {
+                    return -1;
+                }
+                b[off] = (byte) c;
+                return 1;
+            }
         };
 
-        ByteArrayInputStream input =
-                new ByteArrayInputStream(data);
-
-        // Act & Assert
-        assertThrows(
-                IOException.class,
-                () -> reader.readFrame(input)
-        );
+        assertArrayEquals("HELLO".getBytes(), reader.readFrame(oneByteAtATime));
+        assertNull(reader.readFrame(oneByteAtATime));
     }
 }

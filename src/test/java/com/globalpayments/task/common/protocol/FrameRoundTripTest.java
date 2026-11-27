@@ -10,11 +10,10 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class IntegrationTest {
+class FrameRoundTripTest {
 
     private IReader reader;
     private IWriter writer;

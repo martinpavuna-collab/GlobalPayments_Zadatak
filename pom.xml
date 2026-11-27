@@ -47,13 +47,19 @@
                     <execution>
                         <id>server</id>
                         <configuration>
-                            <mainClass>com.globalpayments.task.Main</mainClass>
+                            <mainClass>com.globalpayments.task.ServerMain</mainClass>
                         </configuration>
                     </execution>
                     <execution>
                         <id>client</id>
                         <configuration>
                             <mainClass>com.globalpayments.task.ClientMain</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>query</id>
+                        <configuration>
+                            <mainClass>com.globalpayments.task.QueryMain</mainClass>
                         </configuration>
                     </execution>
                 </executions>

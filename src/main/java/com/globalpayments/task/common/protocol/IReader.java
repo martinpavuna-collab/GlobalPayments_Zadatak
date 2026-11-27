@@ -5,9 +5,10 @@ import java.io.InputStream;
 
 public interface IReader {
 
-    public  int readLength(InputStream inputStream) throws IOException;
+    int readLength(InputStream inputStream) throws IOException;
 
-    public byte[] readPayload(InputStream inputStream, int length)  throws IOException;
+    byte[] readPayload(InputStream inputStream, int length) throws IOException;
 
-    public byte[] readFrame(InputStream inputStream) throws IOException ;
+    /** @return the next payload, or {@code null} at a clean end of the stream */
+    byte[] readFrame(InputStream inputStream) throws IOException;
 }

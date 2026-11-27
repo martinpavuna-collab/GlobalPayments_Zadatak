@@ -9,10 +9,8 @@ import com.globalpayments.task.server.MessageServer;
 
 import java.sql.SQLException;
 
-import static com.globalpayments.task.config.AppConfig.SERVER_PORT;
-
-
-public class Main {
+/** Server. Usage: ServerMain [port] (default port: see AppConfig). */
+public class ServerMain {
     public static void main(String[] args) {
 
         int port;
@@ -20,26 +18,33 @@ public class Main {
         try {
             port = AppConfig.getPort(args);
         } catch (IllegalArgumentException e) {
-            System.out.println("Configuration error: " + e.getMessage());
+            System.err.println("Configuration error: " + e.getMessage());
+            System.exit(1);
             return;
         }
 
+        String outputFile = AppConfig.OUTPUT_FILE;
+        String dbFile =  AppConfig.DATABASE_FILE;
+
         IReader reader = new FrameReader();
-        IDatabaseManager databaseManager = new DatabaseManager();
+        IDatabaseManager databaseManager = new DatabaseManager(AppConfig.toJdbcUrl(dbFile));
 
         try {
             databaseManager.createTable();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            System.err.println("Cannot prepare database '" + dbFile + "': " + e.getMessage());
+            System.exit(2);
+            return;
         }
 
-
-        MessageServer server = new MessageServer(port, reader,databaseManager);
+        MessageServer server = new MessageServer(port, outputFile, reader, databaseManager);
+        Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
 
         try {
             server.start();
         } catch (Exception e) {
             System.err.println("Server failed: " + e.getMessage());
+            System.exit(2);
         }
     }
 }

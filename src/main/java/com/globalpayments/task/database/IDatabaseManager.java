@@ -1,13 +1,15 @@
 package com.globalpayments.task.database;
 
+import com.globalpayments.task.model.Transaction;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public interface IDatabaseManager {
 
-    public Connection getConnection() throws SQLException;
+    Connection getConnection() throws SQLException;
 
-    public void createTable() throws SQLException;
+    void createTable() throws SQLException;
 
-    public void saveMessage(String message) throws SQLException;
+    void saveTransaction(Transaction transaction) throws SQLException;
 }
